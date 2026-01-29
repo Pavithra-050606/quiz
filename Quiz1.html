@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart GK Quiz</title>
+
+<style>
+*{box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+
+/* TITLE */
+.quiz-title{
+    text-align:center;
+    font-size:48px;
+    font-weight:900;
+    letter-spacing:6px;
+    margin-bottom:15px;
+    background:linear-gradient(90deg,#ffdd00,#ff6b6b,#6c63ff,#38d39f);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(120deg,#1d2671,#c33764);
+    color:#111;
+}
+
+.dark body{
+    background:linear-gradient(120deg,#0f2027,#203a43,#2c5364);
+    color:#fff;
+}
+
+.quiz-container{
+    width:90%;
+    max-width:1100px;
+    background:#f8f9fc;
+    display:flex;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 20px 40px rgba(0,0,0,.25)
+}
+
+.dark .quiz-container{background:#1e1e2f;color:#fff}
+
+/* PALETTE */
+.question-palette{
+    width:230px;
+    background:#2d2f48;
+    padding:20px;
+    color:#fff
+}
+.palette-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px
+}
+.q-box{
+    background:white;
+    color:#111;
+    text-align:center;
+    padding:8px 0;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer
+}
+.q-box.answered{background:#2ecc71;color:#fff}
+.q-box.visited{background:#e74c3c;color:#fff}
+
+/* CONTENT */
+.quiz-content{flex:1;padding:30px}
+
+.header-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px
+}
+
+.timer{
+    background:#111;
+    color:#fff;
+    padding:6px 14px;
+    border-radius:20px
+}
+
+/* PROGRESS */
+.progress{
+    height:10px;
+    background:#ddd;
+    border-radius:6px;
+    overflow:hidden;
+    margin-bottom:15px
+}
+.progress-bar{
+    height:100%;
+    width:0%;
+    background:#38d39f;
+    transition:.3s
+}
+
+.question{font-size:20px;font-weight:600;margin-bottom:15px}
+
+/* OPTIONS */
+.options label{
+    display:block;
+    background:#fff;
+    color:#111;
+    padding:12px;
+    margin-bottom:12px;
+    border-radius:8px;
+    cursor:pointer;
+}
+.dark .options label{background:#2f2f45;color:#fff}
+.options input{margin-right:8px}
+
+/* CONTROLS */
+.controls{
+    margin-top:20px;
+    display:flex;
+    gap:10px;
+    justify-content:space-between
+}
+button{
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer
+}
+.prev{background:#6c63ff;color:white}
+.next{background:#2ecc71;color:white}
+.clear{background:#e74c3c;color:white}
+
+/* RESULT */
+.result{max-height:80vh;overflow-y:auto}
+.explain{
+    background:#eef;
+    margin-bottom:15px;
+    padding:15px;
+    border-radius:10px;
+    color:#111;
+}
+.dark .explain{background:#2f2f45;color:#fff}
+
+.correct{color:#2ecc71;font-weight:bold}
+.wrong{color:#e74c3c;font-weight:bold}
+
+/* SCORE */
+.score-box{
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:20px;
+    text-align:center
+}
+
+/* CHART */
+.chart{
+    margin:20px 0;
+}
+.bar{
+    height:24px;
+    margin-bottom:10px;
+    border-radius:6px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    padding-left:10px;
+    font-weight:bold
+}
+.correct-bar{background:#2ecc71}
+.wrong-bar{background:#e74c3c}
+.unanswered-bar{background:#95a5a6}
+
+.restart{
+    margin-top:20px;
+    background:#f1c40f;
+    padding:12px 20px;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer
+}
+</style>
+</head>
+
+<body>
+
+<div class="quiz-title">QUIZ</div>
+
+<div class="quiz-container">
+<div class="question-palette">
+    <div class="palette-grid" id="palette"></div>
+</div>
+
+<div class="quiz-content" id="quizArea">
+
+<div class="header-bar">
+    <div class="timer" id="timer">⏱ 10:00</div>
+    <button onclick="toggleDark()">🌙</button>
+</div>
+
+<div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="question" id="questionText"></div>
+<div class="options" id="options"></div>
+
+<div class="controls">
+    <button class="prev" onclick="prevQuestion()">Previous</button>
+    <button class="clear" onclick="clearAnswer()">Clear</button>
+    <button class="next" onclick="nextQuestion()">Next</button>
+    <button class="next" onclick="submitQuiz()">Submit</button>
+</div>
+
+</div>
+</div>
+
+<script>
+const questions=[
+{q:"Which river is known as the Sorrow of Bihar?",o:["Ganga","Kosi","Yamuna","Brahmaputra"]},
+{q:"Tallest land animal?",o:["Elephant","Giraffe","Camel","Horse"]},
+{q:"Deepest ocean trench?",o:["Java","Mariana","Puerto Rico","Tonga"]},
+{q:"Country with most time zones?",o:["Russia","USA","France","China"]},
+{q:"Metal liquid at room temperature?",o:["Mercury","Gallium","Bromine","Cesium"]},
+{q:"Fastest wind speed planet?",o:["Jupiter","Saturn","Neptune","Uranus"]},
+{q:"Largest desert?",o:["Sahara","Gobi","Antarctica","Arabian"]},
+{q:"Bird flying backward?",o:["Swift","Hummingbird","Eagle","Falcon"]},
+{q:"Organ using most oxygen?",o:["Heart","Brain","Liver","Kidney"]},
+{q:"Paper currency originated in?",o:["India","China","Persia","Egypt"]},
+{q:"Strongest human bone?",o:["Skull","Femur","Jaw","Spine"]},
+{q:"Gas changing voice?",o:["Helium","Nitrogen","Oxygen","Hydrogen"]},
+{q:"Saltiest water body?",o:["Red Sea","Dead Sea","Caspian","Black Sea"]},
+{q:"Vitamin from sunlight?",o:["A","B12","D","K"]},
+{q:"Fastest long-distance runner?",o:["Cheetah","Horse","Ostrich","Antelope"]},
+{q:"Best conductor?",o:["Copper","Silver","Gold","Aluminium"]},
+{q:"Continent without reptiles?",o:["Europe","Antarctica","Australia","Africa"]},
+{q:"Organ that regenerates?",o:["Heart","Liver","Lung","Brain"]},
+{q:"Universal blood donor?",o:["A","B","AB","O-"]},
+{q:"Gas in neon signs?",o:["Neon","Argon","Krypton","Xenon"]}
+];
+
+const correct=[1,1,1,2,0,2,2,1,1,1,1,0,1,2,2,1,1,1,3,0];
+
+let current=0, submitted=false;
+let answers=Array(20).fill(null);
+let visited=Array(20).fill(false);
+
+const palette=document.getElementById("palette");
+const progressBar=document.getElementById("progressBar");
+
+/* TIMER */
+let time=600;
+const timerInterval=setInterval(()=>{
+    if(submitted) return;
+    let m=Math.floor(time/60), s=time%60;
+    timer.innerText=`⏱ ${m}:${s<10?'0':''}${s}`;
+    if(--time<0) submitQuiz();
+},1000);
+
+/* PALETTE */
+questions.forEach((_,i)=>{
+    let b=document.createElement("div");
+    b.className="q-box";
+    b.innerText=i+1;
+    b.onclick=()=>loadQuestion(i);
+    palette.appendChild(b);
+});
+
+function updatePalette(){
+    document.querySelectorAll(".q-box").forEach((b,i)=>{
+        b.classList.remove("answered","visited");
+        if(answers[i]!==null) b.classList.add("answered");
+        else if(visited[i]) b.classList.add("visited");
+    });
+    progressBar.style.width=`${answers.filter(a=>a!==null).length/20*100}%`;
+}
+
+function loadQuestion(i){
+    if(submitted) return;
+    current=i; visited[i]=true;
+    updatePalette();
+    questionText.innerText=`${i+1}. ${questions[i].q}`;
+    options.innerHTML="";
+    questions[i].o.forEach((opt,idx)=>{
+        let l=document.createElement("label");
+        let r=document.createElement("input");
+        r.type="radio"; r.name="opt";
+        if(answers[i]===idx) r.checked=true;
+        r.onchange=()=>{answers[i]=idx;updatePalette();}
+        l.append(r," "+opt);
+        options.appendChild(l);
+    });
+}
+
+function nextQuestion(){if(current<19)loadQuestion(current+1)}
+function prevQuestion(){if(current>0)loadQuestion(current-1)}
+function clearAnswer(){answers[current]=null;updatePalette();loadQuestion(current)}
+
+function submitQuiz(){
+    submitted=true;
+    clearInterval(timerInterval);
+    document.querySelector(".question-palette").style.display="none";
+    quizArea.style.width="100%";
+
+    let correctCount=0, wrongCount=0, unansweredCount=0;
+
+    answers.forEach((a,i)=>{
+        if(a===null) unansweredCount++;
+        else if(a===correct[i]) correctCount++;
+        else wrongCount++;
+    });
+
+    let html=`<div class="result">
+        <div class="score-box">🏆 Score: ${correctCount} / 20</div>
+
+        <div class="chart">
+            <div class="bar correct-bar" style="width:${correctCount/20*100}%">Correct: ${correctCount}</div>
+            <div class="bar wrong-bar" style="width:${wrongCount/20*100}%">Wrong: ${wrongCount}</div>
+            <div class="bar unanswered-bar" style="width:${unansweredCount/20*100}%">Unanswered: ${unansweredCount}</div>
+        </div>`;
+
+    answers.forEach((a,i)=>{
+        html+=`
+        <div class="explain">
+            <b>${i+1}. ${questions[i].q}</b><br>
+            Your Answer:
+            <span class="${a===correct[i]?'correct':'wrong'}">
+            ${a!==null?questions[i].o[a]:"Not Answered"}
+            </span><br>
+            Correct Answer:
+            <span class="correct">${questions[i].o[correct[i]]}</span>
+        </div>`;
+    });
+
+    html+=`<button class="restart" onclick="location.reload()">🔁 Restart Quiz</button></div>`;
+    quizArea.innerHTML=html;
+}
+
+function toggleDark(){
+    document.documentElement.classList.toggle("dark");
+}
+
+loadQuestion(0);
+</script>
+
+</body>
+</html>
